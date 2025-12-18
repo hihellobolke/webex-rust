@@ -67,18 +67,15 @@ impl AdaptiveCard {
     ///
     /// * `card` - `CardElement` to add
     pub fn add_body<T: Into<CardElement>>(&mut self, card: T) -> Self {
-        //self.body = self.body.map_or_else(|| Some(vec![card.into()]), |body| body.push(card.into()));
-        //self.body = Some(self.body.unwrap_or_default().push(card.into()));
-        // TODO: improve this - can we use take()?
-        self.body = Some(match self.body.clone() {
+        match self.body.take() {
             None => {
-                vec![card.into()]
+                self.body = Some(vec![card.into()]);
             }
             Some(mut body) => {
                 body.push(card.into());
-                body
+                self.body = Some(body);
             }
-        });
+        }
         self.into()
     }
 
@@ -88,15 +85,15 @@ impl AdaptiveCard {
     ///
     /// * `action` - Action to add
     pub fn add_action<T: Into<Action>>(&mut self, a: T) -> Self {
-        self.actions = Some(match self.actions.clone() {
+        match self.actions.take() {
             None => {
-                vec![a.into()]
+                self.actions = Some(vec![a.into()]);
             }
-            Some(mut action) => {
-                action.push(a.into());
-                action
+            Some(mut actions) => {
+                actions.push(a.into());
+                self.actions = Some(actions);
             }
-        });
+        }
         self.into()
     }
 }

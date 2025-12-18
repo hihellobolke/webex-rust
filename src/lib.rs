@@ -202,10 +202,8 @@ impl WebexEventStream {
          */
         let auth = types::Authorization::new(token);
         debug!("Authenticating to stream");
-        match ws_stream
-            .send(TMessage::Text(serde_json::to_string(&auth).unwrap().into()))
-            .await
-        {
+        let auth_json = serde_json::to_string(&auth)?;
+        match ws_stream.send(TMessage::Text(auth_json.into())).await {
             Ok(()) => {
                 /*
                  * The next thing back should be a pong
@@ -367,6 +365,17 @@ where {
         .await
     }
 
+    /// Extract title from HTML error page, or return generic error message
+    fn extract_html_title(html: &str, status: StatusCode) -> String {
+        if let (Some(start_pos), Some(end_pos)) = (html.find("<title>"), html.find("</title>")) {
+            let start = start_pos + 7;
+            if start < end_pos && end_pos <= html.len() {
+                return html[start..end_pos].to_string();
+            }
+        }
+        format!("HTTP {} - HTML error page returned", status.as_u16())
+    }
+
     async fn rest_api<T: DeserializeOwned>(
         &self,
         http_method: reqwest::Method,
@@ -438,15 +447,7 @@ where {
 
             // Handle HTML error pages (like 403 from device endpoints)
             if error_text.starts_with("<!doctype html") || error_text.starts_with("<html") {
-                let clean_error =
-                    if error_text.contains("<title>") && error_text.contains("</title>") {
-                        // Extract title from HTML
-                        let start = error_text.find("<title>").unwrap() + 7;
-                        let end = error_text.find("</title>").unwrap();
-                        error_text[start..end].to_string()
-                    } else {
-                        format!("HTTP {} - HTML error page returned", status.as_u16())
-                    };
+                let clean_error = Self::extract_html_title(&error_text, status);
                 debug!(
                     "HTTP {} error for {}: {}",
                     status.as_u16(),
@@ -600,11 +601,12 @@ impl Webex {
             .collect();
 
         // Sort devices in descending order by modification time, meaning latest created device
-        // first.
+        // first. Use current time as fallback for devices without modification_time.
+        let now = chrono::Utc::now();
         devices.sort_by(|a: &DeviceData, b: &DeviceData| {
             b.modification_time
-                .unwrap_or_else(chrono::Utc::now)
-                .cmp(&a.modification_time.unwrap_or_else(chrono::Utc::now))
+                .unwrap_or(now)
+                .cmp(&a.modification_time.unwrap_or(now))
         });
 
         for device in devices {

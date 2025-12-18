@@ -750,16 +750,15 @@ impl Event {
     /// Get the UUID of the room the Space created event corresponds to.
     /// This is a workaround for a bug in the API, where the UUID returned in the event is not correct.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// Will panic if the event is not `Space::Created` or if activity is not set.
+    /// Returns an error if the event is not `Space::Created` or if activity is not set.
     fn room_id_of_space_created_event(&self) -> Result<String, crate::error::Error> {
-        assert_eq!(
-            self.activity_type(),
-            ActivityType::Space(SpaceActivity::Created),
-            "Expected space created event, got {:?}",
-            self.activity_type()
-        );
+        if self.activity_type() != ActivityType::Space(SpaceActivity::Created) {
+            return Err(crate::error::Error::Api(
+                "Expected space created event, got different activity type",
+            ));
+        }
         let activity_id = self
             .data
             .activity
