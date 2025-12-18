@@ -33,8 +33,6 @@
 //! author is a current developer at Cisco, but has no direct affiliation
 //! with the Webex development team.
 
-extern crate lazy_static;
-
 pub mod adaptive_card;
 #[allow(missing_docs)]
 pub mod error;
