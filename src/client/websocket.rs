@@ -8,9 +8,8 @@ use std::time::Duration;
 use tokio_tungstenite::tungstenite::{Error as TErr, Message as TMessage};
 
 /// WebSocket stream type.
-pub type WStream = tokio_tungstenite::WebSocketStream<
-    tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>,
->;
+pub type WStream =
+    tokio_tungstenite::WebSocketStream<tokio_tungstenite::MaybeTlsStream<tokio::net::TcpStream>>;
 
 /// Webex event stream for receiving real-time events via WebSocket.
 pub struct WebexEventStream {

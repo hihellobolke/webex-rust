@@ -695,9 +695,18 @@ impl CardElement {
     /// Set Horizontal Alignment
     pub fn set_horizontal_alignment(&mut self, alignment: HorizontalAlignment) -> Self {
         match self {
-            Self::TextBlock { horizontal_alignment, .. }
-            | Self::Image { horizontal_alignment, .. }
-            | Self::ActionSet { horizontal_alignment, .. } => {
+            Self::TextBlock {
+                horizontal_alignment,
+                ..
+            }
+            | Self::Image {
+                horizontal_alignment,
+                ..
+            }
+            | Self::ActionSet {
+                horizontal_alignment,
+                ..
+            } => {
                 *horizontal_alignment = Some(alignment);
             }
             _ => {

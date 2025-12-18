@@ -19,10 +19,13 @@ mod rest;
 mod websocket;
 
 pub use rest::{AuthorizationType, RestClient};
-pub use websocket::{WebexEventStream, WStream};
+pub use websocket::{WStream, WebexEventStream};
 
 // Re-export constants from parent
-use super::{CRATE_VERSION, DEFAULT_DEVICE_NAME, DEFAULT_REGISTRATION_HOST_PREFIX, DEVICE_SYSTEM_NAME, REST_HOST_PREFIX, U2C_HOST_PREFIX};
+use super::{
+    CRATE_VERSION, DEFAULT_DEVICE_NAME, DEFAULT_REGISTRATION_HOST_PREFIX, DEVICE_SYSTEM_NAME,
+    REST_HOST_PREFIX, U2C_HOST_PREFIX,
+};
 
 /// Main client for interacting with the Webex Teams API.
 ///
@@ -462,11 +465,8 @@ impl Webex {
         }
 
         // Fetch the user ID from the API
-        let me_global_id = GlobalId::new_with_cluster_unchecked(
-            GlobalIdType::Person,
-            "me".to_string(),
-            None,
-        );
+        let me_global_id =
+            GlobalId::new_with_cluster_unchecked(GlobalIdType::Person, "me".to_string(), None);
         let me = self.get::<Person>(&me_global_id).await?;
 
         // Cache it for future use
@@ -533,8 +533,7 @@ impl Webex {
         })?;
 
         debug!("Found membership with ID: {}", membership.id);
-        let membership_id =
-            GlobalId::new(GlobalIdType::Membership, membership.id.clone())?;
+        let membership_id = GlobalId::new(GlobalIdType::Membership, membership.id.clone())?;
         let rest_method = format!("memberships/{}", membership_id.id());
 
         self.client
@@ -600,9 +599,7 @@ impl Webex {
                 debug!("No devices found (404), will create new device");
                 self.setup_devices().await.map(|device| vec![device])
             }
-            StatusCode::FORBIDDEN => {
-                self.handle_device_forbidden_error(&original_error).await
-            }
+            StatusCode::FORBIDDEN => self.handle_device_forbidden_error(&original_error).await,
             _ => {
                 error!("Unexpected HTTP status {status} when listing devices");
                 Err(original_error)
@@ -641,7 +638,9 @@ impl Webex {
                 Ok(vec![device])
             }
             Err(setup_err) => {
-                error!("Device creation failed: {setup_err}. Cannot proceed without device access.");
+                error!(
+                    "Device creation failed: {setup_err}. Cannot proceed without device access."
+                );
                 Err(Error::Status(StatusCode::FORBIDDEN))
             }
         }

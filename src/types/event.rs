@@ -1,4 +1,4 @@
-//! Event and activity types for the Webex WebSocket API, including GlobalId utilities.
+//! Event and activity types for the Webex WebSocket API, including `GlobalId` utilities.
 
 use crate::error;
 use base64::Engine;
@@ -587,7 +587,6 @@ pub struct Event {
     pub filter_message: bool,
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -714,11 +713,8 @@ mod tests {
     #[test]
     fn test_global_id_with_cluster() {
         let uuid = "1ab849e0-9ab4-11ee-a70f-d9b57e49f8bf";
-        let global_id = GlobalId::new_with_cluster(
-            GlobalIdType::Room,
-            uuid.to_string(),
-            Some("eu")
-        ).unwrap();
+        let global_id =
+            GlobalId::new_with_cluster(GlobalIdType::Room, uuid.to_string(), Some("eu")).unwrap();
 
         // The cluster should be encoded in the base64 ID
         assert!(!global_id.id().is_empty());
@@ -736,7 +732,8 @@ mod tests {
     #[test]
     fn test_global_id_already_encoded() {
         // If given an already encoded GlobalId, it should pass through
-        let encoded = "Y2lzY29zcGFyazovL3VzL1JPT00vMWFiODQ5ZTAtOWFiNC0xMWVlLWE3MGYtZDliNTdlNDlmOGJm";
+        let encoded =
+            "Y2lzY29zcGFyazovL3VzL1JPT00vMWFiODQ5ZTAtOWFiNC0xMWVlLWE3MGYtZDliNTdlNDlmOGJm";
         let global_id = GlobalId::new(GlobalIdType::Room, encoded.to_string()).unwrap();
 
         assert_eq!(global_id.id, encoded);

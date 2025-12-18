@@ -91,8 +91,14 @@ impl RestClient {
     ) -> Result<R, Error> {
         let host_prefix = self.get_host_prefix(host, "rest");
         let full_url = format!("{host_prefix}/{url}");
-        self.request_with_query("GET", AuthorizationType::Bearer(token), &full_url, Some(params), BODY_NONE)
-            .await
+        self.request_with_query(
+            "GET",
+            AuthorizationType::Bearer(token),
+            &full_url,
+            Some(params),
+            BODY_NONE,
+        )
+        .await
     }
 
     /// Performs a GET request.
@@ -101,7 +107,8 @@ impl RestClient {
         token: &str,
         full_url: &str,
     ) -> Result<R, Error> {
-        self.request("GET", AuthorizationType::Bearer(token), full_url, BODY_NONE).await
+        self.request("GET", AuthorizationType::Bearer(token), full_url, BODY_NONE)
+            .await
     }
 
     /// Performs a POST request with JSON body.
@@ -114,8 +121,13 @@ impl RestClient {
     ) -> Result<R, Error> {
         let host_prefix = self.get_host_prefix(host, "rest");
         let full_url = format!("{host_prefix}/{url}");
-        self.request("POST", AuthorizationType::Bearer(token), &full_url, Some(Body::Json(data)))
-            .await
+        self.request(
+            "POST",
+            AuthorizationType::Bearer(token),
+            &full_url,
+            Some(Body::Json(data)),
+        )
+        .await
     }
 
     /// Performs a PUT request with JSON body.
@@ -128,8 +140,13 @@ impl RestClient {
     ) -> Result<R, Error> {
         let host_prefix = self.get_host_prefix(host, "rest");
         let full_url = format!("{host_prefix}/{url}");
-        self.request("PUT", AuthorizationType::Bearer(token), &full_url, Some(Body::Json(data)))
-            .await
+        self.request(
+            "PUT",
+            AuthorizationType::Bearer(token),
+            &full_url,
+            Some(Body::Json(data)),
+        )
+        .await
     }
 
     /// Performs a DELETE request.
@@ -141,7 +158,14 @@ impl RestClient {
     ) -> Result<(), Error> {
         let host_prefix = self.get_host_prefix(host, "rest");
         let full_url = format!("{host_prefix}/{}/{id}", T::API_ENDPOINT);
-        let _: EmptyReply = self.request("DELETE", AuthorizationType::Bearer(token), &full_url, BODY_NONE).await?;
+        let _: EmptyReply = self
+            .request(
+                "DELETE",
+                AuthorizationType::Bearer(token),
+                &full_url,
+                BODY_NONE,
+            )
+            .await?;
         Ok(())
     }
 
@@ -203,7 +227,9 @@ impl RestClient {
         req = match auth {
             AuthorizationType::None => req,
             AuthorizationType::Bearer(token) => req.bearer_auth(token),
-            AuthorizationType::Basic { username, password } => req.basic_auth(username, Some(password)),
+            AuthorizationType::Basic { username, password } => {
+                req.basic_auth(username, Some(password))
+            }
         };
 
         req = match body {
@@ -250,7 +276,9 @@ impl RestClient {
         req = match auth {
             AuthorizationType::None => req,
             AuthorizationType::Bearer(token) => req.bearer_auth(token),
-            AuthorizationType::Basic { username, password } => req.basic_auth(username, Some(password)),
+            AuthorizationType::Basic { username, password } => {
+                req.basic_auth(username, Some(password))
+            }
         };
 
         req = match body {

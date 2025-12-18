@@ -41,7 +41,7 @@ pub mod error;
 pub mod types;
 
 // Re-export main client types
-pub use client::{Webex, WebexEventStream, WStream};
+pub use client::{WStream, Webex, WebexEventStream};
 pub use types::*;
 
 // Constants used throughout the crate

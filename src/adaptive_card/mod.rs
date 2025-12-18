@@ -200,7 +200,10 @@ mod tests {
     #[test]
     fn test_adaptive_card_new() {
         let card = AdaptiveCard::new();
-        assert_eq!(card.schema, Some("http://adaptivecards.io/schemas/adaptive-card.json".to_string()));
+        assert_eq!(
+            card.schema,
+            Some("http://adaptivecards.io/schemas/adaptive-card.json".to_string())
+        );
         assert_eq!(card.version, "1.1");
         assert_eq!(card.card_type, "AdaptiveCard");
         assert!(card.body.is_none());
@@ -299,7 +302,13 @@ mod tests {
     fn test_card_element_action_set() {
         let action_set = CardElement::action_set();
         match action_set {
-            CardElement::ActionSet { actions, horizontal_alignment, separator, spacing, .. } => {
+            CardElement::ActionSet {
+                actions,
+                horizontal_alignment,
+                separator,
+                spacing,
+                ..
+            } => {
                 assert_eq!(actions.len(), 0);
                 assert_eq!(horizontal_alignment, None);
                 assert_eq!(separator, None);
@@ -315,7 +324,10 @@ mod tests {
         element.set_horizontal_alignment(HorizontalAlignment::Center);
 
         match element {
-            CardElement::TextBlock { horizontal_alignment, .. } => {
+            CardElement::TextBlock {
+                horizontal_alignment,
+                ..
+            } => {
                 assert_eq!(horizontal_alignment, Some(HorizontalAlignment::Center));
             }
             _ => panic!("Expected TextBlock"),

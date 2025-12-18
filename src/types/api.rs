@@ -1,8 +1,11 @@
 //! Internal API traits and types.
 
 use super::{
-    attachment::AttachmentAction, membership::{Membership, MembershipListParams},
-    message::{Message, MessageListParams}, organization::{Organization, Team}, person::Person,
+    attachment::AttachmentAction,
+    membership::{Membership, MembershipListParams},
+    message::{Message, MessageListParams},
+    organization::{Organization, Team},
+    person::Person,
     room::{Room, RoomListParams},
 };
 
@@ -63,7 +66,7 @@ pub struct ListResult<T> {
     pub items: Option<Vec<T>>,
     /// Some API endpoints might return different field names (e.g., devices).
     pub devices: Option<Vec<T>>,
-    /// Handle error cases - allow dead_code since these are for future API error handling
+    /// Handle error cases - allow `dead_code` since these are for future API error handling
     #[allow(dead_code)]
     pub(crate) message: Option<String>,
     /// Errors returned from the API.

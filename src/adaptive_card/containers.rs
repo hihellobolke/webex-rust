@@ -23,7 +23,7 @@ pub struct Fact {
     pub value: String,
 }
 
-/// Column in a ColumnSet
+/// Column in a `ColumnSet`
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub struct Column {
     /// The card elements to render inside the Column.
