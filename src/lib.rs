@@ -1011,10 +1011,18 @@ impl Webex {
         }
     }
 
+    /// Handle errors when getting devices, with automatic fallback to device creation.
+    ///
+    /// This method implements the following logic:
+    /// - 404 Not Found → Create a new device
+    /// - 403 Forbidden → Log detailed OAuth scope error, attempt device creation
+    /// - 429 Rate Limited → Pass through the error
+    /// - Other errors → Log and return error
     async fn handle_get_devices_error(&self, e: Error) -> Result<Vec<DeviceData>, Error> {
         match e {
-            Error::Status(s) => self.handle_status_error(s).await,
-            Error::StatusText(s, msg) => self.handle_status_text_error(s, &msg).await,
+            Error::Status(status) | Error::StatusText(status, _) => {
+                self.handle_device_status_error(status, e).await
+            }
             Error::Limited(_, _) => Err(e),
             _ => {
                 error!("Can't decode devices reply: {e}");
@@ -1023,53 +1031,39 @@ impl Webex {
         }
     }
 
-    async fn handle_status_error(&self, status: StatusCode) -> Result<Vec<DeviceData>, Error> {
-        if status == StatusCode::NOT_FOUND {
-            debug!("No devices found (404), will create new device");
-            self.setup_devices().await.map(|device| vec![device])
-        } else if status == StatusCode::FORBIDDEN {
-            self.handle_forbidden_error(None).await
-        } else {
-            error!("Unexpected HTTP status {status} when listing devices");
-            Err(Error::Status(status))
-        }
-    }
-
-    async fn handle_status_text_error(
+    /// Handle HTTP status code errors when accessing device endpoints.
+    async fn handle_device_status_error(
         &self,
         status: StatusCode,
-        msg: &str,
+        original_error: Error,
     ) -> Result<Vec<DeviceData>, Error> {
-        if status == StatusCode::NOT_FOUND {
-            debug!("No devices found (404), will create new device");
-            self.setup_devices().await.map(|device| vec![device])
-        } else if status == StatusCode::FORBIDDEN {
-            self.handle_forbidden_error(Some(msg)).await
-        } else {
-            error!("Unexpected HTTP status {status} when listing devices: {msg}");
-            Err(Error::StatusText(status, msg.to_string()))
+        match status {
+            StatusCode::NOT_FOUND => {
+                debug!("No devices found (404), will create new device");
+                self.setup_devices().await.map(|device| vec![device])
+            }
+            StatusCode::FORBIDDEN => {
+                self.handle_device_forbidden_error(&original_error).await
+            }
+            _ => {
+                error!("Unexpected HTTP status {status} when listing devices");
+                Err(original_error)
+            }
         }
     }
 
-    async fn handle_forbidden_error(
+    /// Handle 403 Forbidden errors on device endpoints with detailed OAuth scope guidance.
+    async fn handle_device_forbidden_error(
         &self,
-        details: Option<&str>,
+        original_error: &Error,
     ) -> Result<Vec<DeviceData>, Error> {
-        Self::log_forbidden_error(details);
-        match self.setup_devices().await {
-            Ok(device) => {
-                debug!("Surprisingly, device creation succeeded despite 403 on list");
-                Ok(vec![device])
-            }
-            Err(setup_err) => {
-                error!("Device creation also failed (expected): {setup_err}");
-                error!("Cannot proceed without device access");
-                Err(Error::Status(StatusCode::FORBIDDEN))
-            }
-        }
-    }
+        // Extract error details if available
+        let details = match original_error {
+            Error::StatusText(_, msg) => Some(msg.as_str()),
+            _ => None,
+        };
 
-    fn log_forbidden_error(details: Option<&str>) {
+        // Log detailed error message with OAuth scope requirements
         error!("========================================================================");
         error!("Device endpoint returned 403 Forbidden");
         error!("========================================================================");
@@ -1081,6 +1075,19 @@ impl Webex {
             error!("  Error details: {msg}");
         }
         error!("========================================================================");
+
+        // Attempt device creation anyway (sometimes list fails but create succeeds)
+        match self.setup_devices().await {
+            Ok(device) => {
+                debug!("Surprisingly, device creation succeeded despite 403 on list");
+                Ok(vec![device])
+            }
+            Err(setup_err) => {
+                error!("Device creation also failed (expected): {setup_err}");
+                error!("Cannot proceed without device access");
+                Err(Error::Status(StatusCode::FORBIDDEN))
+            }
+        }
     }
 
     async fn setup_devices(&self) -> Result<DeviceData, Error> {
