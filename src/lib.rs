@@ -482,8 +482,7 @@ where {
         match serde_json::from_str(&response_text) {
             Ok(parsed) => Ok(parsed),
             Err(e) => {
-                error!("Failed to parse API response for {full_url}: {e}");
-                error!("Raw response: {response_text}");
+                error!("Failed to parse API response for {full_url}: {e}. Raw response: {response_text}");
                 Err(e.into())
             }
         }
@@ -619,7 +618,10 @@ impl Webex {
             Ok(device) => connect_device(self, device).await,
             Err(e) => match &e {
                 Error::StatusText(status, _) if *status == StatusCode::FORBIDDEN => {
-                    error!("Device creation failed with 403 - event stream REQUIRES spark:devices_write and spark:devices_read scopes in your Webex integration");
+                    error!(
+                        "Device creation failed with 403. Event stream requires OAuth scopes: \
+                         spark:devices_write, spark:devices_read"
+                    );
                     Err(e)
                 }
                 _ => {
@@ -967,9 +969,9 @@ impl Webex {
         debug!("Found {} matching memberships", memberships.len());
 
         let membership = memberships.into_iter().next().ok_or_else(|| {
-            error!("Could not find membership for user '{my_user_id}' in room");
             error!(
-                "This usually means you are not a member of this room, or membership data is stale"
+                "Could not find membership for user '{my_user_id}' in room. \
+                 User may not be a member or membership data is stale."
             );
             error::Error::UserError("User is not a member of this room".to_string())
         })?;
@@ -1064,17 +1066,17 @@ impl Webex {
         };
 
         // Log detailed error message with OAuth scope requirements
-        error!("========================================================================");
-        error!("Device endpoint returned 403 Forbidden");
-        error!("========================================================================");
-        error!("  Your Webex integration token is missing required OAuth scopes:");
-        error!("    - spark:devices_write  (required to register device)");
-        error!("    - spark:devices_read   (required to list devices)");
-        if let Some(msg) = details {
-            error!("");
-            error!("  Error details: {msg}");
-        }
-        error!("========================================================================");
+        let scope_info = if let Some(msg) = details {
+            format!(
+                "Device endpoint returned 403 Forbidden: {msg}. \
+                 Token missing required OAuth scopes: spark:devices_write, spark:devices_read"
+            )
+        } else {
+            "Device endpoint returned 403 Forbidden. \
+             Token missing required OAuth scopes: spark:devices_write, spark:devices_read"
+                .to_string()
+        };
+        error!("{scope_info}");
 
         // Attempt device creation anyway (sometimes list fails but create succeeds)
         match self.setup_devices().await {
@@ -1083,8 +1085,7 @@ impl Webex {
                 Ok(vec![device])
             }
             Err(setup_err) => {
-                error!("Device creation also failed (expected): {setup_err}");
-                error!("Cannot proceed without device access");
+                error!("Device creation failed: {setup_err}. Cannot proceed without device access.");
                 Err(Error::Status(StatusCode::FORBIDDEN))
             }
         }
