@@ -84,26 +84,36 @@ impl Column {
     }
 
     /// Adds element to column
+    #[must_use]
     pub fn add_element(&mut self, item: CardElement) -> Self {
         self.items.push(item);
         self.into()
     }
 
     /// Sets separator
+    #[must_use]
     pub fn set_separator(&mut self, s: bool) -> Self {
         self.separator = Some(s);
         self.into()
     }
 
     /// Sets `VerticalContentAlignment`
+    #[must_use]
     pub fn set_vertical_alignment(&mut self, s: VerticalContentAlignment) -> Self {
         self.vertical_content_alignment = Some(s);
         self.into()
     }
 
     /// Sets width
+    #[must_use]
     pub fn set_width<T: Into<String>>(&mut self, s: T) -> Self {
         self.width = Some(serde_json::Value::String(s.into()));
         self.into()
+    }
+}
+
+impl Default for Column {
+    fn default() -> Self {
+        Self::new()
     }
 }

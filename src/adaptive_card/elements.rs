@@ -3,7 +3,10 @@
 use serde::{Deserialize, Serialize};
 
 use super::containers::{Choice, Column, Fact};
-use super::styles::*;
+use super::styles::{
+    ChoiceInputStyle, Color, ContainerStyle, FontType, Height, HorizontalAlignment, ImageSize,
+    ImageStyle, Size, Spacing, TextInputStyle, VerticalContentAlignment, Weight,
+};
 use super::Action;
 
 /// Represents the various types of elements that can be included in an Adaptive Card.
@@ -408,6 +411,7 @@ impl CardElement {
     }
 
     /// Add element to Container
+    #[must_use]
     pub fn add_element<T: Into<Self>>(&mut self, element: T) -> Self {
         if let Self::Container { items, .. } = self {
             items.push(element.into());
@@ -416,6 +420,7 @@ impl CardElement {
     }
 
     /// Set Container Style
+    #[must_use]
     pub fn set_container_style(&mut self, s: ContainerStyle) -> Self {
         if let Self::Container { style, .. } = self {
             *style = Some(s);
@@ -424,6 +429,7 @@ impl CardElement {
     }
 
     /// Set container contents vertical alignment
+    #[must_use]
     pub fn set_vertical_alignment(&mut self, align: VerticalContentAlignment) -> Self {
         if let Self::Container {
             vertical_content_alignment,
@@ -453,6 +459,7 @@ impl CardElement {
     }
 
     /// Set Text Input Multiline
+    #[must_use]
     pub fn set_multiline(&mut self, s: bool) -> Self {
         if let Self::InputText { is_multiline, .. } = self {
             *is_multiline = Some(s);
@@ -491,6 +498,7 @@ impl CardElement {
     }
 
     /// Set choiceSet Style
+    #[must_use]
     pub fn set_style(&mut self, s: ChoiceInputStyle) -> Self {
         if let Self::InputChoiceSet { style, .. } = self {
             *style = Some(s);
@@ -499,6 +507,7 @@ impl CardElement {
     }
 
     /// Set title Style
+    #[must_use]
     pub fn set_title(&mut self, s: String) -> Self {
         if let Self::InputToggle { title, .. } = self {
             *title = Some(s);
@@ -507,6 +516,7 @@ impl CardElement {
     }
 
     /// Set choiceSet Style
+    #[must_use]
     pub fn set_multiselect(&mut self, b: bool) -> Self {
         if let Self::InputChoiceSet {
             is_multi_select, ..
@@ -542,6 +552,7 @@ impl CardElement {
     }
 
     /// Set Text Weight
+    #[must_use]
     pub fn set_weight(&mut self, w: Weight) -> Self {
         if let Self::TextBlock { weight, .. } = self {
             *weight = Some(w);
@@ -550,6 +561,7 @@ impl CardElement {
     }
 
     /// Set Text Font Type
+    #[must_use]
     pub fn set_font(&mut self, f: FontType) -> Self {
         if let Self::TextBlock { font_type, .. } = self {
             *font_type = Some(f);
@@ -558,6 +570,7 @@ impl CardElement {
     }
 
     /// Set Text Size
+    #[must_use]
     pub fn set_size(&mut self, s: Size) -> Self {
         if let Self::TextBlock { size, .. } = self {
             *size = Some(s);
@@ -566,6 +579,7 @@ impl CardElement {
     }
 
     /// Set Text Color
+    #[must_use]
     pub fn set_color(&mut self, c: Color) -> Self {
         if let Self::TextBlock { color, .. } = self {
             *color = Some(c);
@@ -574,6 +588,7 @@ impl CardElement {
     }
 
     /// Set Text wrap
+    #[must_use]
     pub fn set_wrap(&mut self, w: bool) -> Self {
         if let Self::TextBlock { wrap, .. } = self {
             *wrap = Some(w);
@@ -582,6 +597,7 @@ impl CardElement {
     }
 
     /// Set Text subtle
+    #[must_use]
     pub fn set_subtle(&mut self, s: bool) -> Self {
         if let Self::TextBlock { is_subtle, .. } = self {
             *is_subtle = Some(s);
@@ -620,6 +636,7 @@ impl CardElement {
     }
 
     /// Add fact to factSet
+    #[must_use]
     pub fn add_key_value<T: Into<String>, S: Into<String>>(&mut self, title: T, value: S) -> Self {
         match self {
             Self::FactSet { facts, .. } => facts.push(Fact {
@@ -650,6 +667,7 @@ impl CardElement {
     }
 
     /// Add column to columnSet
+    #[must_use]
     pub fn add_column(&mut self, column: Column) -> Self {
         if let Self::ColumnSet { columns, .. } = self {
             columns.push(column);
@@ -658,6 +676,7 @@ impl CardElement {
     }
 
     /// Set Separator
+    #[must_use]
     pub fn set_separator(&mut self, s: bool) -> Self {
         match self {
             Self::TextBlock { separator, .. }
@@ -678,6 +697,7 @@ impl CardElement {
     }
 
     /// Set Placeholder
+    #[must_use]
     pub fn set_placeholder(&mut self, s: Option<String>) -> Self {
         match self {
             Self::InputText { placeholder, .. }
@@ -693,6 +713,7 @@ impl CardElement {
     }
 
     /// Set Horizontal Alignment
+    #[must_use]
     pub fn set_horizontal_alignment(&mut self, alignment: HorizontalAlignment) -> Self {
         match self {
             Self::TextBlock {
@@ -717,6 +738,7 @@ impl CardElement {
     }
 
     /// Set Spacing
+    #[must_use]
     pub fn set_spacing(&mut self, s: Spacing) -> Self {
         match self {
             Self::TextBlock { spacing, .. }
@@ -748,6 +770,7 @@ impl CardElement {
     }
 
     /// Add action to actionSet
+    #[must_use]
     pub fn add_action_to_set(&mut self, action: Action) -> Self {
         if let Self::ActionSet { actions, .. } = self {
             actions.push(action);

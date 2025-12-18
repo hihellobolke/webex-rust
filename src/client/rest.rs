@@ -42,6 +42,7 @@ pub struct RestClient {
 
 impl RestClient {
     /// Creates a new `RestClient`.
+    #[must_use]
     pub fn new() -> Self {
         Self {
             host_prefix: HashMap::new(),
@@ -50,6 +51,7 @@ impl RestClient {
     }
 
     /// Creates a `RestClient` with existing `host_prefix` and `web_client`.
+    #[must_use]
     pub const fn new_with(
         host_prefix: HashMap<String, String>,
         web_client: reqwest::Client,
@@ -240,9 +242,9 @@ impl RestClient {
 
         let response = req.send().await?;
         let status = response.status();
+        let response_text = response.text().await?;
 
         if status.is_success() {
-            let response_text = response.text().await?;
             trace!("Response: {response_text}");
 
             // Handle empty responses (like 204 No Content)
@@ -252,9 +254,8 @@ impl RestClient {
                 Ok(serde_json::from_str(&response_text)?)
             }
         } else {
-            let response_text = response.text().await?;
             error!("HTTP {status}: {response_text}");
-            Err(self.handle_error_response(status, response_text))
+            Err(Self::handle_error_response(status, response_text))
         }
     }
 
@@ -289,9 +290,9 @@ impl RestClient {
 
         let response = req.send().await?;
         let status = response.status();
+        let response_text = response.text().await?;
 
         if status.is_success() {
-            let response_text = response.text().await?;
             trace!("Response: {response_text}");
 
             // Handle empty responses (like 204 No Content)
@@ -301,14 +302,13 @@ impl RestClient {
                 Ok(serde_json::from_str(&response_text)?)
             }
         } else {
-            let response_text = response.text().await?;
             error!("HTTP {status}: {response_text}");
-            Err(self.handle_error_response(status, response_text))
+            Err(Self::handle_error_response(status, response_text))
         }
     }
 
     /// Handles error responses from the API.
-    fn handle_error_response(&self, status: StatusCode, response_text: String) -> Error {
+    fn handle_error_response(status: StatusCode, response_text: String) -> Error {
         if response_text.starts_with("<!DOCTYPE html>") || response_text.starts_with("<html") {
             let title = extract_html_title(&response_text, status);
             Error::StatusText(status, title)
@@ -447,6 +447,12 @@ impl RestClient {
 
         let _: EmptyReply = self.request("DELETE", auth, &full_url, BODY_NONE).await?;
         Ok(())
+    }
+}
+
+impl Default for RestClient {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

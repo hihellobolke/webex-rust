@@ -2,7 +2,11 @@
 
 use crate::adaptive_card::AdaptiveCard;
 use crate::error::Error;
-use crate::types::*;
+use crate::types::{
+    Attachment, AttachmentAction, CatalogReply, DeviceData, DevicesReply, Gettable, GlobalId,
+    GlobalIdType, ListResult, Membership, MembershipListParams, Message, MessageEditParams,
+    MessageOut, Organization, Person, Room, RoomType, Team,
+};
 use futures::{future::try_join_all, try_join};
 use log::{debug, error, trace, warn};
 use reqwest::StatusCode;

@@ -83,6 +83,7 @@ impl AdaptiveCard {
     /// # Arguments
     ///
     /// * `card` - `CardElement` to add
+    #[must_use]
     pub fn add_body<T: Into<CardElement>>(&mut self, card: T) -> Self {
         match self.body.take() {
             None => {
@@ -101,6 +102,7 @@ impl AdaptiveCard {
     /// # Arguments
     ///
     /// * `action` - Action to add
+    #[must_use]
     pub fn add_action<T: Into<Action>>(&mut self, a: T) -> Self {
         match self.actions.take() {
             None => {
@@ -214,7 +216,7 @@ mod tests {
     fn test_adaptive_card_add_body() {
         let mut card = AdaptiveCard::new();
         let text_block = CardElement::text_block("Hello World");
-        card.add_body(text_block);
+        let _ = card.add_body(text_block);
 
         assert!(card.body.is_some());
         assert_eq!(card.body.as_ref().unwrap().len(), 1);
@@ -223,9 +225,9 @@ mod tests {
     #[test]
     fn test_adaptive_card_add_multiple_body_elements() {
         let mut card = AdaptiveCard::new();
-        card.add_body(CardElement::text_block("First"));
-        card.add_body(CardElement::text_block("Second"));
-        card.add_body(CardElement::text_block("Third"));
+        let _ = card.add_body(CardElement::text_block("First"));
+        let _ = card.add_body(CardElement::text_block("Second"));
+        let _ = card.add_body(CardElement::text_block("Third"));
 
         assert_eq!(card.body.as_ref().unwrap().len(), 3);
     }
@@ -238,7 +240,7 @@ mod tests {
             card: AdaptiveCard::new(),
             style: None,
         };
-        card.add_action(action);
+        let _ = card.add_action(action);
 
         assert!(card.actions.is_some());
         assert_eq!(card.actions.as_ref().unwrap().len(), 1);
@@ -247,12 +249,12 @@ mod tests {
     #[test]
     fn test_adaptive_card_add_multiple_actions() {
         let mut card = AdaptiveCard::new();
-        card.add_action(Action::ShowCard {
+        let _ = card.add_action(Action::ShowCard {
             title: Some("First".to_string()),
             card: AdaptiveCard::new(),
             style: None,
         });
-        card.add_action(Action::ShowCard {
+        let _ = card.add_action(Action::ShowCard {
             title: Some("Second".to_string()),
             card: AdaptiveCard::new(),
             style: None,
@@ -275,7 +277,7 @@ mod tests {
     #[test]
     fn test_card_element_set_separator() {
         let mut element = CardElement::text_block("Test");
-        element.set_separator(true);
+        let _ = element.set_separator(true);
 
         match element {
             CardElement::TextBlock { separator, .. } => {
@@ -288,7 +290,7 @@ mod tests {
     #[test]
     fn test_card_element_set_spacing() {
         let mut element = CardElement::text_block("Test");
-        element.set_spacing(Spacing::Large);
+        let _ = element.set_spacing(Spacing::Large);
 
         match element {
             CardElement::TextBlock { spacing, .. } => {
@@ -321,7 +323,7 @@ mod tests {
     #[test]
     fn test_card_element_set_horizontal_alignment() {
         let mut element = CardElement::text_block("Test");
-        element.set_horizontal_alignment(HorizontalAlignment::Center);
+        let _ = element.set_horizontal_alignment(HorizontalAlignment::Center);
 
         match element {
             CardElement::TextBlock {
