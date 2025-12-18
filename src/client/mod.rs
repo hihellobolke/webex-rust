@@ -37,6 +37,7 @@ use super::{CRATE_VERSION, DEFAULT_DEVICE_NAME, DEFAULT_REGISTRATION_HOST_PREFIX
 /// # Ok(())
 /// # }
 /// ```
+#[derive(Clone)]
 pub struct Webex {
     id: u64,
     client: RestClient,
