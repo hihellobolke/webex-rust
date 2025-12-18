@@ -108,3 +108,77 @@ impl From<&str> for Error {
         Error::Other(s.to_string())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_error_from_string() {
+        let error: Error = "test error".to_string().into();
+        assert!(matches!(error, Error::Other(_)));
+        assert_eq!(error.to_string(), "Unknown error: test error");
+    }
+
+    #[test]
+    fn test_error_from_str() {
+        let error: Error = "test error".into();
+        assert!(matches!(error, Error::Other(_)));
+        assert_eq!(error.to_string(), "Unknown error: test error");
+    }
+
+    #[test]
+    fn test_error_closed() {
+        let error = Error::Closed("connection lost".to_string());
+        assert_eq!(error.to_string(), "Connection was closed: connection lost");
+    }
+
+    #[test]
+    fn test_error_status() {
+        let error = Error::Status(StatusCode::NOT_FOUND);
+        assert_eq!(error.to_string(), "HTTP Status: '404 Not Found'");
+    }
+
+    #[test]
+    fn test_error_status_text() {
+        let error = Error::StatusText(StatusCode::FORBIDDEN, "Missing scopes".to_string());
+        assert_eq!(
+            error.to_string(),
+            "HTTP Status: '403 Forbidden' Message: Missing scopes"
+        );
+    }
+
+    #[test]
+    fn test_error_limited_with_retry() {
+        let error = Error::Limited(StatusCode::TOO_MANY_REQUESTS, Some(60));
+        assert!(error.to_string().contains("429"));
+        assert!(error.to_string().contains("60"));
+    }
+
+    #[test]
+    fn test_error_limited_without_retry() {
+        let error = Error::Limited(StatusCode::TOO_MANY_REQUESTS, None);
+        assert!(error.to_string().contains("429"));
+    }
+
+    #[test]
+    fn test_error_api() {
+        let error = Error::Api("unexpected response format");
+        assert_eq!(
+            error.to_string(),
+            "Webex API changed: unexpected response format"
+        );
+    }
+
+    #[test]
+    fn test_error_authentication() {
+        let error = Error::Authentication;
+        assert_eq!(error.to_string(), "Authentication error");
+    }
+
+    #[test]
+    fn test_error_user_error() {
+        let error = Error::UserError("Invalid input provided".to_string());
+        assert_eq!(error.to_string(), "Invalid input provided");
+    }
+}

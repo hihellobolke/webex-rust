@@ -1238,4 +1238,68 @@ mod tests {
         });
         assert!(event.room_id_of_space_created_event().is_err());
     }
+
+    #[test]
+    fn test_global_id_from_uuid() {
+        let uuid = "1ab849e0-9ab4-11ee-a70f-d9b57e49f8bf";
+        let global_id = GlobalId::new(GlobalIdType::Room, uuid.to_string()).unwrap();
+
+        assert_eq!(global_id.type_, GlobalIdType::Room);
+        // The ID should be base64 encoded when created from a UUID
+        assert!(!global_id.id().is_empty());
+        assert_ne!(global_id.id(), uuid);
+    }
+
+    #[test]
+    fn test_global_id_check_type_success() {
+        let uuid = "1ab849e0-9ab4-11ee-a70f-d9b57e49f8bf";
+        let global_id = GlobalId::new(GlobalIdType::Room, uuid.to_string()).unwrap();
+
+        assert!(global_id.check_type(GlobalIdType::Room).is_ok());
+    }
+
+    #[test]
+    fn test_global_id_check_type_failure() {
+        let uuid = "1ab849e0-9ab4-11ee-a70f-d9b57e49f8bf";
+        let global_id = GlobalId::new(GlobalIdType::Room, uuid.to_string()).unwrap();
+
+        assert!(global_id.check_type(GlobalIdType::Person).is_err());
+    }
+
+    #[test]
+    fn test_global_id_with_cluster() {
+        let uuid = "1ab849e0-9ab4-11ee-a70f-d9b57e49f8bf";
+        let global_id = GlobalId::new_with_cluster(
+            GlobalIdType::Room,
+            uuid.to_string(),
+            Some("eu")
+        ).unwrap();
+
+        // The cluster should be encoded in the base64 ID
+        assert!(!global_id.id().is_empty());
+        assert_ne!(global_id.id(), uuid);
+    }
+
+    #[test]
+    fn test_global_id_unknown_type_error() {
+        let uuid = "1ab849e0-9ab4-11ee-a70f-d9b57e49f8bf";
+        let result = GlobalId::new(GlobalIdType::Unknown, uuid.to_string());
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_global_id_already_encoded() {
+        // If given an already encoded GlobalId, it should pass through
+        let encoded = "Y2lzY29zcGFyazovL3VzL1JPT00vMWFiODQ5ZTAtOWFiNC0xMWVlLWE3MGYtZDliNTdlNDlmOGJm";
+        let global_id = GlobalId::new(GlobalIdType::Room, encoded.to_string()).unwrap();
+
+        assert_eq!(global_id.id, encoded);
+    }
+
+    #[test]
+    fn test_message_activity_is_created() {
+        assert!(MessageActivity::Posted.is_created());
+        assert!(!MessageActivity::Deleted.is_created());
+    }
 }

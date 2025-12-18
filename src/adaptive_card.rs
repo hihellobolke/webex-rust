@@ -1163,3 +1163,150 @@ pub struct Choice {
 fn default_version() -> String {
     "1.1".to_string()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_adaptive_card_new() {
+        let card = AdaptiveCard::new();
+        assert_eq!(card.schema, Some("http://adaptivecards.io/schemas/adaptive-card.json".to_string()));
+        assert_eq!(card.version, "1.1");
+        assert_eq!(card.card_type, "AdaptiveCard");
+        assert!(card.body.is_none());
+        assert!(card.actions.is_none());
+    }
+
+    #[test]
+    fn test_adaptive_card_add_body() {
+        let mut card = AdaptiveCard::new();
+        let text_block = CardElement::text_block("Hello World");
+        card.add_body(text_block);
+
+        assert!(card.body.is_some());
+        assert_eq!(card.body.as_ref().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn test_adaptive_card_add_multiple_body_elements() {
+        let mut card = AdaptiveCard::new();
+        card.add_body(CardElement::text_block("First"));
+        card.add_body(CardElement::text_block("Second"));
+        card.add_body(CardElement::text_block("Third"));
+
+        assert_eq!(card.body.as_ref().unwrap().len(), 3);
+    }
+
+    #[test]
+    fn test_adaptive_card_add_action() {
+        let mut card = AdaptiveCard::new();
+        let action = Action::ShowCard {
+            title: Some("Show More".to_string()),
+            card: AdaptiveCard::new(),
+            style: None,
+        };
+        card.add_action(action);
+
+        assert!(card.actions.is_some());
+        assert_eq!(card.actions.as_ref().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn test_adaptive_card_add_multiple_actions() {
+        let mut card = AdaptiveCard::new();
+        card.add_action(Action::ShowCard {
+            title: Some("First".to_string()),
+            card: AdaptiveCard::new(),
+            style: None,
+        });
+        card.add_action(Action::ShowCard {
+            title: Some("Second".to_string()),
+            card: AdaptiveCard::new(),
+            style: None,
+        });
+
+        assert_eq!(card.actions.as_ref().unwrap().len(), 2);
+    }
+
+    #[test]
+    fn test_card_element_text_block() {
+        let element = CardElement::text_block("Test text");
+        match element {
+            CardElement::TextBlock { text, .. } => {
+                assert_eq!(text, "Test text");
+            }
+            _ => panic!("Expected TextBlock"),
+        }
+    }
+
+    #[test]
+    fn test_card_element_set_separator() {
+        let mut element = CardElement::text_block("Test");
+        element.set_separator(true);
+
+        match element {
+            CardElement::TextBlock { separator, .. } => {
+                assert_eq!(separator, Some(true));
+            }
+            _ => panic!("Expected TextBlock"),
+        }
+    }
+
+    #[test]
+    fn test_card_element_set_spacing() {
+        let mut element = CardElement::text_block("Test");
+        element.set_spacing(Spacing::Large);
+
+        match element {
+            CardElement::TextBlock { spacing, .. } => {
+                assert_eq!(spacing, Some(Spacing::Large));
+            }
+            _ => panic!("Expected TextBlock"),
+        }
+    }
+
+    #[test]
+    fn test_card_element_action_set() {
+        let action_set = CardElement::action_set();
+        match action_set {
+            CardElement::ActionSet { actions, horizontal_alignment, separator, spacing, .. } => {
+                assert_eq!(actions.len(), 0);
+                assert_eq!(horizontal_alignment, None);
+                assert_eq!(separator, None);
+                assert_eq!(spacing, None);
+            }
+            _ => panic!("Expected ActionSet"),
+        }
+    }
+
+    #[test]
+    fn test_card_element_set_horizontal_alignment() {
+        let mut element = CardElement::text_block("Test");
+        element.set_horizontal_alignment(HorizontalAlignment::Center);
+
+        match element {
+            CardElement::TextBlock { horizontal_alignment, .. } => {
+                assert_eq!(horizontal_alignment, Some(HorizontalAlignment::Center));
+            }
+            _ => panic!("Expected TextBlock"),
+        }
+    }
+
+    #[test]
+    fn test_card_element_container() {
+        let container = CardElement::container();
+        match container {
+            CardElement::Container { items, .. } => {
+                assert_eq!(items.len(), 0);
+            }
+            _ => panic!("Expected Container"),
+        }
+    }
+
+    #[test]
+    fn test_column_new() {
+        let column = Column::new();
+        assert_eq!(column.items.len(), 0);
+    }
+}
