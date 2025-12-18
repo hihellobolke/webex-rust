@@ -203,7 +203,7 @@ impl WebexEventStream {
         let auth = types::Authorization::new(token);
         debug!("Authenticating to stream");
         match ws_stream
-            .send(TMessage::Text(serde_json::to_string(&auth).unwrap()))
+            .send(TMessage::Text(serde_json::to_string(&auth).unwrap().into()))
             .await
         {
             Ok(()) => {
