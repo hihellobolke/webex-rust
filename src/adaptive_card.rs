@@ -470,6 +470,18 @@ pub enum CardElement {
         /// Specifies the height of the element.
         #[serde(skip_serializing_if = "Option::is_none")]
         height: Option<Height>,
+        /// Controls the horizontal text alignment.
+        #[serde(
+            rename = "HorizontalAlignment",
+            skip_serializing_if = "Option::is_none"
+        )]
+        horizontal_alignment: Option<HorizontalAlignment>,
+        /// When true, draw a separating line at the top of the element.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        separator: Option<bool>,
+        /// Controls the amount of spacing between this element and the preceding element.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        spacing: Option<Spacing>,
     },
 }
 
@@ -760,6 +772,7 @@ impl CardElement {
             | Self::ColumnSet { separator, .. }
             | Self::Image { separator, .. }
             | Self::InputChoiceSet { separator, .. }
+            | Self::ActionSet { separator, .. }
             | Self::InputText { separator, .. }
             | Self::InputToggle { separator, .. } => {
                 *separator = Some(s);
@@ -786,6 +799,21 @@ impl CardElement {
         self.into()
     }
 
+    /// Set Horizontal Alignment
+    pub fn set_horizontal_alignment(&mut self, alignment: HorizontalAlignment) -> Self {
+        match self {
+            Self::TextBlock { horizontal_alignment, .. }
+            | Self::Image { horizontal_alignment, .. }
+            | Self::ActionSet { horizontal_alignment, .. } => {
+                *horizontal_alignment = Some(alignment);
+            }
+            _ => {
+                log::warn!("Card does not have horizontal alignment field");
+            }
+        }
+        self.into()
+    }
+
     /// Set Spacing
     pub fn set_spacing(&mut self, s: Spacing) -> Self {
         match self {
@@ -794,6 +822,7 @@ impl CardElement {
             | Self::ColumnSet { spacing, .. }
             | Self::Image { spacing, .. }
             | Self::InputChoiceSet { spacing, .. }
+            | Self::ActionSet { spacing, .. }
             | Self::InputText { spacing, .. } => {
                 *spacing = Some(s);
             }
@@ -810,6 +839,9 @@ impl CardElement {
         Self::ActionSet {
             actions: vec![],
             height: None,
+            horizontal_alignment: None,
+            separator: None,
+            spacing: None,
         }
     }
 
