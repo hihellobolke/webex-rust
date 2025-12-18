@@ -73,7 +73,7 @@ pub enum ActivityType {
     Message(MessageActivity),
     /// The space the bot is in has changed - see [`SpaceActivity`] for details.
     Space(SpaceActivity),
-    /// The user has submitted an [`AdaptiveCard`].
+    /// The user has submitted an [`AdaptiveCard`](crate::adaptive_card::AdaptiveCard).
     AdaptiveCardSubmit,
     /// Meeting event.
     /// TODO: This needs to be broken down like `Message` and `Space`, if anyone cares.
