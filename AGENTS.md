@@ -26,6 +26,10 @@ This is `webex-rust`, an asynchronous Rust library providing a minimal interface
 - `cargo clippy --all-targets --all-features` - Full clippy check
 - `cargo build --all-targets` - Build everything including examples
 
+### Git Hooks
+- `./hooks/install.sh` - Install pre-commit hooks that automatically run cargo fmt
+- Pre-commit hook ensures code is formatted before each commit
+
 ## Architecture
 
 ### Core Components
@@ -61,6 +65,7 @@ This is `webex-rust`, an asynchronous Rust library providing a minimal interface
 - WebSocket connections require device registration and token authentication
 - Mercury URL caching reduces API calls for device discovery
 - Comprehensive CI workflow with tests, clippy, fmt, build, and doc checks
+- Git pre-commit hooks available in `hooks/` directory to auto-format code
 
 ## Recent Refactoring (v0.11.0)
 
