@@ -4,6 +4,7 @@ use crate::error::Error;
 use crate::types::{EmptyReply, Gettable, ListResult};
 use log::{error, trace};
 use reqwest::StatusCode;
+use serde_json;
 use serde::{de::DeserializeOwned, Serialize};
 use std::collections::HashMap;
 
@@ -254,7 +255,8 @@ impl RestClient {
                 Ok(serde_json::from_str(&response_text)?)
             }
         } else {
-            error!("HTTP {status}: {response_text}");
+            // Log errors with appropriate level based on context
+            Self::log_error(status, url, &response_text);
             Err(Self::handle_error_response(status, response_text))
         }
     }
@@ -302,9 +304,32 @@ impl RestClient {
                 Ok(serde_json::from_str(&response_text)?)
             }
         } else {
-            error!("HTTP {status}: {response_text}");
+            // Log errors with appropriate level based on context
+            Self::log_error(status, url, &response_text);
             Err(Self::handle_error_response(status, response_text))
         }
+    }
+
+    /// Logs HTTP errors with appropriate log level based on context.
+    fn log_error(status: StatusCode, url: &str, response_text: &str) {
+        // Try to parse as JSON to get structured error message
+        if let Ok(json_error) = serde_json::from_str::<serde_json::Value>(response_text) {
+            if let Some(message) = json_error.get("message").and_then(|m| m.as_str()) {
+                // Team 404 errors are expected when user doesn't have team access - log as debug
+                if status == StatusCode::NOT_FOUND
+                    && url.contains("/teams")
+                    && message.contains("Could not find teams")
+                {
+                    trace!(
+                        "HTTP {status} for {url}: {message} (expected when not a team member)"
+                    );
+                    return;
+                }
+            }
+        }
+
+        // Log all other errors at error level
+        error!("HTTP {status}: {response_text}");
     }
 
     /// Handles error responses from the API.
