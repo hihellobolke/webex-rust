@@ -4,8 +4,8 @@ use crate::error::Error;
 use crate::types::{EmptyReply, Gettable, ListResult};
 use log::{error, trace};
 use reqwest::StatusCode;
-use serde_json;
 use serde::{de::DeserializeOwned, Serialize};
+use serde_json;
 use std::collections::HashMap;
 
 /// Authorization type for REST requests.
@@ -320,9 +320,7 @@ impl RestClient {
                     && url.contains("/teams")
                     && message.contains("Could not find teams")
                 {
-                    trace!(
-                        "HTTP {status} for {url}: {message} (expected when not a team member)"
-                    );
+                    trace!("HTTP {status} for {url}: {message} (expected when not a team member)");
                     return;
                 }
             }
