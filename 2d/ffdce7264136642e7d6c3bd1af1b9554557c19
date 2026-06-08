@@ -1,0 +1,39 @@
+src/client/rest.rs
+  s_dd4204560b36e7::t_bce2589bba6c4a 6-7,13-14,375-377,379-385,396-398,493-569
+  s_dd4204560b36e7::t_186049851f266f 591,747
+  s_dd4204560b36e7::t_7b8aa9d61fb8e0 593,596
+  s_dd4204560b36e7::t_2384b80e2b3734 663-746,748-776
+  s_dd4204560b36e7::t_45b12096066193 386-395
+  s_dd4204560b36e7::t_81db9a86ef6745 589-590,592,594-595,597-662,777
+Cargo.toml
+  h_69f0698284feb4 23,25,29,44
+  s_dd4204560b36e7::t_848a61bd571dba 28
+src/client/mod.rs
+  s_dd4204560b36e7::t_6fdf52c75a5a65 326-327
+  s_dd4204560b36e7::t_52a06ea7d53c2a 1094
+  s_dd4204560b36e7::t_1b376c035a4296 7-8
+  s_dd4204560b36e7::t_8d80216e9112eb 315-322
+  s_dd4204560b36e7::t_666a2bcc543c5f 434-435,437-438,449-450,452-453
+  s_dd4204560b36e7::t_9e720ed0c3a574 1093,1095-1217
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "2dffdce7264136642e7d6c3bd1af1b9554557c19",
+  "prompts": {},
+  "humans": {
+    "h_69f0698284feb4": {
+      "author": "gautsing <gautsing@cisco.com>"
+    }
+  },
+  "sessions": {
+    "s_dd4204560b36e7": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "9f730b7f-24cb-4cc8-a9ae-c1a360a36183",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "gautsing <gautsing@cisco.com>"
+    }
+  }
+}
