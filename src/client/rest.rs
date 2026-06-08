@@ -3,10 +3,14 @@
 use crate::error::Error;
 use crate::types::{EmptyReply, Gettable, ListResult};
 use log::{error, trace};
+use parse_link_header::parse_with_rel;
+use reqwest::header::LINK;
 use reqwest::StatusCode;
 use serde::{de::DeserializeOwned, Serialize};
 use serde_json;
 use std::collections::HashMap;
+
+const MAX_NEXT_PAGE_REQUESTS: usize = 100;
 
 /// Authorization type for REST requests.
 #[derive(Clone, Copy)]
@@ -368,15 +372,30 @@ impl RestClient {
         params: &T::ListParams<'_>,
         host: Option<&str>,
     ) -> Result<Vec<T>, Error> {
-        let list_result: ListResult<T> = self
-            .get_with_params(token, T::API_ENDPOINT, params, host)
-            .await?;
+        self.list_endpoint(token, T::API_ENDPOINT, Some(params), host)
+            .await
+    }
 
-        // Handle both 'items' and 'devices' fields
-        Ok(list_result
-            .items
-            .or(list_result.devices)
-            .unwrap_or_default())
+    pub(crate) async fn list_endpoint<T: DeserializeOwned, P: Serialize + ?Sized>(
+        &self,
+        token: &str,
+        endpoint: &str,
+        params: Option<&P>,
+        host: Option<&str>,
+    ) -> Result<Vec<T>, Error> {
+        let host_prefix = host.map_or_else(
+            || {
+                self.host_prefix
+                    .get(endpoint)
+                    .cloned()
+                    .or_else(|| self.host_prefix.get("rest").cloned())
+                    .unwrap_or_else(|| super::REST_HOST_PREFIX.to_string())
+            },
+            ToString::to_string,
+        );
+        let full_url = format!("{host_prefix}/{endpoint}");
+        self.paginated_get_list(AuthorizationType::Bearer(token), &full_url, params)
+            .await
     }
 
     // Legacy API methods for compatibility with client/mod.rs
@@ -471,6 +490,84 @@ impl RestClient {
         let _: EmptyReply = self.request("DELETE", auth, &full_url, BODY_NONE).await?;
         Ok(())
     }
+
+    async fn paginated_get_list<T: DeserializeOwned, P: Serialize + ?Sized>(
+        &self,
+        auth: AuthorizationType<'_>,
+        initial_url: &str,
+        initial_query: Option<&P>,
+    ) -> Result<Vec<T>, Error> {
+        let mut next_url = Some(initial_url.to_string());
+        let mut next_query = initial_query;
+        let mut followed_pages = 0usize;
+        let mut all_items = Vec::new();
+
+        while let Some(current_url) = next_url.take() {
+            trace!("GET {current_url}");
+            let mut req = self
+                .web_client
+                .request(reqwest::Method::GET, &current_url)
+                .header("User-Agent", format!("webex-rust/{}", super::CRATE_VERSION));
+
+            if let Some(params) = next_query.take() {
+                req = req.query(params);
+            }
+
+            req = match auth {
+                AuthorizationType::None => req,
+                AuthorizationType::Bearer(token) => req.bearer_auth(token),
+                AuthorizationType::Basic { username, password } => {
+                    req.basic_auth(username, Some(password))
+                }
+            };
+
+            let response = req.send().await?;
+            let status = response.status();
+            let link_header = response
+                .headers()
+                .get(LINK)
+                .and_then(|value| value.to_str().ok())
+                .map(str::to_owned);
+            let response_text = response.text().await?;
+
+            if !status.is_success() {
+                Self::log_error(status, &current_url, &response_text);
+                return Err(Self::handle_error_response(status, response_text));
+            }
+
+            trace!("Response: {response_text}");
+            let list_result: ListResult<T> = if response_text.is_empty() {
+                serde_json::from_str("{}")?
+            } else {
+                serde_json::from_str(&response_text)?
+            };
+
+            all_items.extend(list_result.items.or(list_result.devices).unwrap_or_default());
+
+            next_url = link_header
+                .as_deref()
+                .and_then(Self::extract_next_link_url);
+
+            if next_url.is_some() {
+                if followed_pages >= MAX_NEXT_PAGE_REQUESTS {
+                    return Err(Error::StatusText(
+                        StatusCode::LOOP_DETECTED,
+                        format!(
+                            "Pagination safety cap of {MAX_NEXT_PAGE_REQUESTS} next pages reached"
+                        ),
+                    ));
+                }
+                followed_pages += 1;
+            }
+        }
+
+        Ok(all_items)
+    }
+
+    fn extract_next_link_url(link_header: &str) -> Option<String> {
+        let mut links = parse_with_rel(link_header).ok()?;
+        links.remove("next").map(|link| link.raw_uri)
+    }
 }
 
 impl Default for RestClient {
@@ -488,4 +585,193 @@ fn extract_html_title(html: &str, status: StatusCode) -> String {
         }
     }
     format!("HTTP {} - HTML error page returned", status.as_u16())
+}
+
+#[cfg(test)]
+#[allow(clippy::significant_drop_tightening)]
+mod tests {
+    use super::{RestClient, MAX_NEXT_PAGE_REQUESTS};
+    use crate::types::room::{Room, RoomListParams};
+    use mockito::Server;
+    use reqwest::StatusCode;
+    use serde_json::json;
+
+    fn room_json(id: &str) -> serde_json::Value {
+        json!({
+            "id": id,
+            "title": "Test Room",
+            "type": "group",
+            "isLocked": false,
+            "lastActivity": "2024-01-01T00:00:00.000Z",
+            "creatorId": "person-1",
+            "created": "2024-01-01T00:00:00.000Z"
+        })
+    }
+
+    #[tokio::test]
+    async fn list_follows_only_rel_next_from_link_header() {
+        let mut server = Server::new_async().await;
+        let next_url = format!("{}/rooms?cursor=page-2", server.url());
+
+        let page_one = server
+            .mock("GET", "/rooms")
+            .match_header("authorization", "Bearer test-token")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_header(
+                "link",
+                &format!(
+                    "<{}/rooms?cursor=prev>; rel=\"prev\", <{}>; rel=\"next\", <{}/rooms?cursor=last>; rel=\"last\"",
+                    server.url(),
+                    next_url,
+                    server.url()
+                ),
+            )
+            .with_body(json!({ "items": [room_json("room-1")] }).to_string())
+            .create_async()
+            .await;
+
+        let page_two = server
+            .mock("GET", "/rooms")
+            .match_query(mockito::Matcher::UrlEncoded(
+                "cursor".into(),
+                "page-2".into(),
+            ))
+            .match_header("authorization", "Bearer test-token")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(json!({ "items": [room_json("room-2")] }).to_string())
+            .create_async()
+            .await;
+
+        let client = RestClient::new();
+        let rooms = client
+            .list::<Room>(
+                "test-token",
+                &RoomListParams::default(),
+                Some(server.url().as_str()),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(rooms.len(), 2);
+        assert_eq!(rooms[0].id, "room-1");
+        assert_eq!(rooms[1].id, "room-2");
+        page_one.assert_async().await;
+        page_two.assert_async().await;
+    }
+
+    #[tokio::test]
+    async fn list_ignores_malformed_link_header() {
+        let mut server = Server::new_async().await;
+        let page_one = server
+            .mock("GET", "/rooms")
+            .match_header("authorization", "Bearer test-token")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_header("link", "garbage value")
+            .with_body(json!({ "items": [room_json("room-1")] }).to_string())
+            .create_async()
+            .await;
+
+        let client = RestClient::new();
+        let rooms = client
+            .list::<Room>(
+                "test-token",
+                &RoomListParams::default(),
+                Some(server.url().as_str()),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(rooms.len(), 1);
+        assert_eq!(rooms[0].id, "room-1");
+        page_one.assert_async().await;
+    }
+
+    #[tokio::test]
+    async fn list_stops_when_link_header_is_missing() {
+        let mut server = Server::new_async().await;
+        let page_one = server
+            .mock("GET", "/rooms")
+            .match_header("authorization", "Bearer test-token")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(json!({ "items": [room_json("room-1")] }).to_string())
+            .create_async()
+            .await;
+
+        let client = RestClient::new();
+        let rooms = client
+            .list::<Room>(
+                "test-token",
+                &RoomListParams::default(),
+                Some(server.url().as_str()),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(rooms.len(), 1);
+        assert_eq!(rooms[0].id, "room-1");
+        page_one.assert_async().await;
+    }
+
+    #[tokio::test]
+    async fn list_errors_when_pagination_cap_is_reached() {
+        let mut server = Server::new_async().await;
+        let mut mocks = Vec::new();
+
+        for page in 0..=MAX_NEXT_PAGE_REQUESTS {
+            let next_page = page + 1;
+            let next_url = format!("{}/rooms?cursor=page-{next_page}", server.url());
+            let body = json!({
+                "items": [room_json(&format!("room-{page}"))]
+            })
+            .to_string();
+
+            let mock = if page == 0 {
+                server
+                    .mock("GET", "/rooms")
+                    .match_header("authorization", "Bearer test-token")
+                    .with_status(200)
+                    .with_header("content-type", "application/json")
+                    .with_header("link", &format!("<{next_url}>; rel=\"next\""))
+                    .with_body(body)
+                    .create_async()
+                    .await
+            } else {
+                server
+                    .mock("GET", "/rooms")
+                    .match_query(mockito::Matcher::UrlEncoded(
+                        "cursor".into(),
+                        format!("page-{page}"),
+                    ))
+                    .match_header("authorization", "Bearer test-token")
+                    .with_status(200)
+                    .with_header("content-type", "application/json")
+                    .with_header("link", &format!("<{next_url}>; rel=\"next\""))
+                    .with_body(body)
+                    .create_async()
+                    .await
+            };
+            mocks.push(mock);
+        }
+
+        let client = RestClient::new();
+        let error = client
+            .list::<Room>(
+                "test-token",
+                &RoomListParams::default(),
+                Some(server.url().as_str()),
+            )
+            .await
+            .unwrap_err();
+
+        assert!(matches!(error, crate::error::Error::StatusText(StatusCode::LOOP_DETECTED, _)));
+        assert!(error.to_string().contains("Pagination safety cap of 100 next pages reached"));
+
+        for mock in mocks {
+            mock.assert_async().await;
+        }
+    }
 }

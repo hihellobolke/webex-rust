@@ -4,8 +4,8 @@ use crate::adaptive_card::AdaptiveCard;
 use crate::error::Error;
 use crate::types::{
     Attachment, AttachmentAction, CatalogReply, DeviceData, DevicesReply, Gettable, GlobalId,
-    GlobalIdType, ListResult, Membership, MembershipListParams, Message, MessageEditParams,
-    MessageOut, Organization, Person, Room, RoomType, Team,
+    GlobalIdType, Membership, MembershipListParams, Message, MessageEditParams, MessageOut,
+    Organization, Person, Room, RoomListParams, RoomType, Team,
 };
 use futures::{future::try_join_all, try_join};
 use log::{debug, error, trace, warn};
@@ -312,17 +312,19 @@ impl Webex {
         let futures: Vec<_> = teams
             .into_iter()
             .map(|team| {
-                let params = [("teamId", team.id)];
-                self.client.api_get::<ListResult<Room>>(
-                    Room::API_ENDPOINT,
-                    Some(params),
-                    AuthorizationType::Bearer(&self.token),
-                )
+                let team_id = team.id;
+                async move {
+                    self.list_with_params::<Room>(RoomListParams {
+                        team_id: Some(team_id.as_str()),
+                        ..RoomListParams::default()
+                    })
+                    .await
+                }
             })
             .collect();
         let teams_rooms = try_join_all(futures).await?;
-        for room in teams_rooms {
-            all_rooms.extend(room.items.or(room.devices).unwrap_or_else(Vec::new));
+        for rooms in teams_rooms {
+            all_rooms.extend(rooms);
         }
         Ok(all_rooms)
     }
@@ -429,13 +431,13 @@ impl Webex {
     /// List resources of a type
     pub async fn list<T: Gettable + DeserializeOwned>(&self) -> Result<Vec<T>, Error> {
         self.client
-            .api_get::<ListResult<T>>(
+            .list_endpoint(
+                &self.token,
                 T::API_ENDPOINT,
-                None::<()>,
-                AuthorizationType::Bearer(&self.token),
+                None::<&()>,
+                None,
             )
             .await
-            .map(|result| result.items.or(result.devices).unwrap_or_default())
     }
 
     /// List resources of a type, with parameters
@@ -444,13 +446,13 @@ impl Webex {
         list_params: T::ListParams<'_>,
     ) -> Result<Vec<T>, Error> {
         self.client
-            .api_get::<ListResult<T>>(
+            .list_endpoint(
+                &self.token,
                 T::API_ENDPOINT,
-                Some(list_params),
-                AuthorizationType::Bearer(&self.token),
+                Some(&list_params),
+                None,
             )
             .await
-            .map(|result| result.items.or(result.devices).unwrap_or_default())
     }
 
     /// Get the current user's ID, caching it for future calls
@@ -1087,5 +1089,130 @@ mod tests {
                 .contains("Cannot leave a 1:1 direct message room"));
         }
         room_mock.assert_async().await;
+    }
+
+    #[allow(clippy::too_many_lines)]
+    #[tokio::test]
+    async fn test_get_all_rooms_aggregates_paginated_team_rooms() {
+        let mut server = mockito::Server::new_async().await;
+
+        let mut host_prefix = HashMap::new();
+        host_prefix.insert("rest".to_string(), server.url());
+
+        let webex_client = Webex {
+            id: 1,
+            client: RestClient {
+                host_prefix,
+                web_client: reqwest::Client::new(),
+            },
+            token: "test_token".to_string(),
+            device: DeviceData {
+                url: Some("test_url".to_string()),
+                ws_url: Some("ws://test".to_string()),
+                device_name: Some("test_device".to_string()),
+                device_type: Some("DESKTOP".to_string()),
+                localized_model: Some("rust-sdk-test".to_string()),
+                modification_time: Some(chrono::Utc::now()),
+                model: Some("rust-sdk-test".to_string()),
+                name: Some("rust-sdk-test-get-all-rooms".to_string()),
+                system_name: Some("rust-sdk-test".to_string()),
+                system_version: Some("0.1.0".to_string()),
+            },
+            user_id: Arc::new(Mutex::new(None)),
+        };
+
+        let team_rooms_next = format!("{}/rooms?cursor=page-2&teamId=team-1", server.url());
+
+        let teamless_rooms = server
+            .mock("GET", "/rooms")
+            .match_header("authorization", "Bearer test_token")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(json!({
+                "items": [{
+                    "id": "teamless-room",
+                    "title": "Teamless Room",
+                    "type": "group",
+                    "isLocked": false,
+                    "lastActivity": "2024-01-01T00:00:00.000Z",
+                    "creatorId": "person-1",
+                    "created": "2024-01-01T00:00:00.000Z"
+                }]
+            }).to_string())
+            .create_async()
+            .await;
+
+        let teams = server
+            .mock("GET", "/teams")
+            .match_header("authorization", "Bearer test_token")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(json!({
+                "items": [{
+                    "id": "team-1",
+                    "name": "Team 1",
+                    "created": "2024-01-01T00:00:00.000Z"
+                }]
+            }).to_string())
+            .create_async()
+            .await;
+
+        let first_team_page = server
+            .mock("GET", "/rooms")
+            .match_query(mockito::Matcher::AllOf(vec![mockito::Matcher::UrlEncoded(
+                "teamId".into(),
+                "team-1".into(),
+            )]))
+            .match_header("authorization", "Bearer test_token")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_header("link", &format!("<{team_rooms_next}>; rel=\"next\""))
+            .with_body(json!({
+                "items": [{
+                    "id": "team-room-1",
+                    "title": "Team Room 1",
+                    "type": "group",
+                    "isLocked": false,
+                    "lastActivity": "2024-01-01T00:00:00.000Z",
+                    "creatorId": "person-1",
+                    "created": "2024-01-01T00:00:00.000Z"
+                }]
+            }).to_string())
+            .create_async()
+            .await;
+
+        let second_team_page = server
+            .mock("GET", "/rooms")
+            .match_query(mockito::Matcher::AllOf(vec![
+                mockito::Matcher::UrlEncoded("cursor".into(), "page-2".into()),
+                mockito::Matcher::UrlEncoded("teamId".into(), "team-1".into()),
+            ]))
+            .match_header("authorization", "Bearer test_token")
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(json!({
+                "items": [{
+                    "id": "team-room-2",
+                    "title": "Team Room 2",
+                    "type": "group",
+                    "isLocked": false,
+                    "lastActivity": "2024-01-01T00:00:00.000Z",
+                    "creatorId": "person-1",
+                    "created": "2024-01-01T00:00:00.000Z"
+                }]
+            }).to_string())
+            .create_async()
+            .await;
+
+        let rooms = webex_client.get_all_rooms().await.unwrap();
+
+        assert_eq!(rooms.len(), 3);
+        assert_eq!(rooms[0].id, "teamless-room");
+        assert_eq!(rooms[1].id, "team-room-1");
+        assert_eq!(rooms[2].id, "team-room-2");
+        teamless_rooms.assert_async().await;
+        teams.assert_async().await;
+        first_team_page.assert_async().await;
+        second_team_page.assert_async().await;
     }
 }
