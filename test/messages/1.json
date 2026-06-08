@@ -1,0 +1,198 @@
+{
+    "id": "Y2lzY29zcGFyazovL3VzL01FU1NBR0UvNDNlM2FmYTAtNjM3My0xMWYxLTg0NGYtZTc0NmViZmI3MTRk",
+    "roomId": "Y2lzY29zcGFyazovL3VzL1JPT00vNzJkOTMxYzAtZGUyZS0xMWVhLWI4YzYtMjk0MWJjZWI4YzMz",
+    "roomType": "group",
+    "text": "Firing, CAE MEDIUM | LoggingPodRestartedCount | Pods restarted in last 5 mins in namespace.\n1066 alerts in np-alln-01 (80), np-alln-101 (10), np-rcdn-01 (74), np-rcdn-101 (7), np-rtp-01 (93), np-rtp-02 (136), np-rtp-101 (26), np-rtp-102 (19), prd-alln-01 (205), prd-alln-02 (95), prd-alln-101 (48), prd-alln-102 (25), prd-rcdn-02 (102), prd-rcdn-101 (28), prd-rcdn-102 (30), prd-rtp-01 (71), prd-rtp-101 (17).",
+    "attachments": [
+        {
+            "contentType": "application/vnd.microsoft.card.adaptive",
+            "content": {
+                "type": "AdaptiveCard",
+                "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+                "version": "1.3",
+                "body": [
+                    {
+                        "type": "ColumnSet",
+                        "columns": [
+                            {
+                                "type": "Column",
+                                "width": "stretch",
+                                "items": [
+                                    {
+                                        "type": "TextBlock",
+                                        "text": "LoggingPodRestartedCount",
+                                        "color": "attention",
+                                        "horizontalAlignment": "left",
+                                        "wrap": true
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "Column",
+                                "width": "stretch",
+                                "items": [
+                                    {
+                                        "type": "TextBlock",
+                                        "text": "CAE MEDIUM, 1066 firing",
+                                        "wrap": true,
+                                        "horizontalAlignment": "right"
+                                    }
+                                ],
+                                "spacing": "small"
+                            }
+                        ]
+                    },
+                    {
+                        "type": "TextBlock",
+                        "text": "Pods restarted in last 5 mins in namespace.",
+                        "wrap": true,
+                        "spacing": "small"
+                    },
+                    {
+                        "type": "ColumnSet",
+                        "columns": [
+                            {
+                                "type": "Column",
+                                "width": "stretch",
+                                "horizontalAlignment": "left",
+                                "verticalContentAlignment": "center",
+                                "items": [
+                                    {
+                                        "type": "ActionSet",
+                                        "actions": [
+                                            {
+                                                "type": "Action.ToggleVisibility",
+                                                "title": "Details",
+                                                "targetElements": [
+                                                    "details_container_toggle"
+                                                ]
+                                            },
+                                            {
+                                                "type": "Action.OpenUrl",
+                                                "title": "Investigate",
+                                                "url": "https://cae-console-ga.cisco.com/sre_agent?replay=true&runbook_name=LoggingPodRestartedCount"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "Column",
+                                "width": "stretch",
+                                "verticalContentAlignment": "bottom",
+                                "items": [
+                                    {
+                                        "type": "TextBlock",
+                                        "text": "[runbook](https://ciscoteams.atlassian.net/wiki/display/GISCONT/LoggingPodRestartedCount)",
+                                        "horizontalAlignment": "right",
+                                        "wrap": true,
+                                        "size": "small",
+                                        "spacing": "small",
+                                        "isSubtle": true
+                                    },
+                                    {
+                                        "type": "TextBlock",
+                                        "text": "{{DATE(2026-06-08T19:50:13+00:00, SHORT)}} at {{TIME(2026-06-08T19:50:13+00:00)}}",
+                                        "horizontalAlignment": "right",
+                                        "wrap": true,
+                                        "size": "small",
+                                        "spacing": "small",
+                                        "isSubtle": true
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "type": "Container",
+                        "id": "details_container_toggle",
+                        "isVisible": false,
+                        "items": [
+                            {
+                                "type": "TextBlock",
+                                "text": "Alerts have been abridged to prevent information overload.\n[Click here to view in Alertmanager UI](https://atlas-cae-alertmanager-ga-rcdn.cisco.com/#/alerts?filter={alertgroup%3D%22kubernetes-apps%22%20alertname%3D%22LoggingPodRestartedCount%22%20namespace%3D%22splunk-logging%22%20receiver_id%3D%22CAE_MEDIUM%22%20value%3D%221%22}).",
+                                "wrap": true
+                            },
+                            {
+                                "type": "FactSet",
+                                "facts": [
+                                    {
+                                        "title": "np-alln-01",
+                                        "value": "80"
+                                    },
+                                    {
+                                        "title": "np-alln-101",
+                                        "value": "10"
+                                    },
+                                    {
+                                        "title": "np-rcdn-01",
+                                        "value": "74"
+                                    },
+                                    {
+                                        "title": "np-rcdn-101",
+                                        "value": "7"
+                                    },
+                                    {
+                                        "title": "np-rtp-01",
+                                        "value": "93"
+                                    },
+                                    {
+                                        "title": "np-rtp-02",
+                                        "value": "136"
+                                    },
+                                    {
+                                        "title": "np-rtp-101",
+                                        "value": "26"
+                                    },
+                                    {
+                                        "title": "np-rtp-102",
+                                        "value": "19"
+                                    },
+                                    {
+                                        "title": "prd-alln-01",
+                                        "value": "205"
+                                    },
+                                    {
+                                        "title": "prd-alln-02",
+                                        "value": "95"
+                                    },
+                                    {
+                                        "title": "prd-alln-101",
+                                        "value": "48"
+                                    },
+                                    {
+                                        "title": "prd-alln-102",
+                                        "value": "25"
+                                    },
+                                    {
+                                        "title": "prd-rcdn-02",
+                                        "value": "102"
+                                    },
+                                    {
+                                        "title": "prd-rcdn-101",
+                                        "value": "28"
+                                    },
+                                    {
+                                        "title": "prd-rcdn-102",
+                                        "value": "30"
+                                    },
+                                    {
+                                        "title": "prd-rtp-01",
+                                        "value": "71"
+                                    },
+                                    {
+                                        "title": "prd-rtp-101",
+                                        "value": "17"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    ],
+    "personId": "Y2lzY29zcGFyazovL3VzL1BFT1BMRS9lMmE0MDFlNC0wOWU3LTRhMTItYTAzZi02MzU5OGMwMjUyMDc",
+    "personEmail": "atlas-alerts@webex.bot",
+    "created": "2026-06-08T19:50:13.658Z"
+}

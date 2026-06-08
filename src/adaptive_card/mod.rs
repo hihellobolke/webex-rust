@@ -176,6 +176,19 @@ pub enum Action {
         #[serde(skip_serializing_if = "Option::is_none")]
         style: Option<ActionStyle>,
     },
+    /// Toggles the visibility of one or more elements.
+    #[serde(rename = "Action.ToggleVisibility")]
+    ToggleVisibility {
+        /// The elements to toggle.
+        #[serde(rename = "targetElements", skip_serializing_if = "Option::is_none")]
+        target_elements: Option<Vec<String>>,
+        /// Label for button or link that represents this action.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        title: Option<String>,
+        /// Controls the style of an Action, which influences how the action is displayed, spoken, etc.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        style: Option<ActionStyle>,
+    },
 }
 
 /// Controls the style of an Action, which influences how the action is displayed, spoken, etc.

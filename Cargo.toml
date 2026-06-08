@@ -1,10 +1,11 @@
 [package]
 name = "webex"
-version = "0.11.0"
+version = "0.12.260608"
 authors = [
   "Scott Hutton <shutton@pobox.com>",
   "Milan Stastny <milan@stastnej.ch>",
   "Abel Shields <abel@uucp.org.uk>",
+  "Gautam Singh <gautsing@gmail.com>",
 ]
 edition = "2021"
 description = "Interface to Webex Teams REST and WebSocket APIs"
@@ -23,7 +24,9 @@ serde_json = "1.0"
 tungstenite = "0.29.0"
 url = "2.5"
 serde_html_form = "0.4.0"
-serde_with = { version = "3.9.0", features = ["macros"] }
+serde_with = { version = "3.21.0", features = ["macros"] }
+strum = { version = "0.28.0", features = ["derive"] }
+strum_macros = "0.28.0"
 thiserror = "2.0"
 reqwest = { version = "0.13.4", features = ["json", "query", "form"] }
 parse_link_header = { version = "0.4.1", features = ["http", "url"] }
