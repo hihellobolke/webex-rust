@@ -1,0 +1,16 @@
+Cargo.toml
+  h_69f0698284feb4 30-31
+src/adaptive_card.rs
+  h_69f0698284feb4 11-12,923-924,937-938,950-951
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "8254935e3662f0f24bb8dd03fce019f6e6e8de24",
+  "prompts": {},
+  "humans": {
+    "h_69f0698284feb4": {
+      "author": "gautsing <gautsing@cisco.com>"
+    }
+  }
+}
