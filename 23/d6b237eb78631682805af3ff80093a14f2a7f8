@@ -1,0 +1,30 @@
+src/adaptive_card/styles.rs
+  h_69f0698284feb4 8-9,23-24,37-38,52-53,62-63,73-74,85,95-96,105-106,116-117,126-127,139-140,150-151
+  s_dd4204560b36e7::t_47160981a2bf17 3,7,22,36,51,61,72,84,86,94,104,115,125,138,149
+  s_dd4204560b36e7::t_3b5f9f658e1dd9 159-259
+src/adaptive_card/mod.rs
+  s_dd4204560b36e7::t_1dedc1b2304cb6 179-191
+Cargo.toml
+  h_69f0698284feb4 3,8,27-29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.6",
+  "base_commit_sha": "23d6b237eb78631682805af3ff80093a14f2a7f8",
+  "prompts": {},
+  "humans": {
+    "h_69f0698284feb4": {
+      "author": "gautsing <gautsing@cisco.com>"
+    }
+  },
+  "sessions": {
+    "s_dd4204560b36e7": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "9f730b7f-24cb-4cc8-a9ae-c1a360a36183",
+        "model": "gpt-5.3-codex"
+      },
+      "human_author": "gautsing <gautsing@cisco.com>"
+    }
+  }
+}
